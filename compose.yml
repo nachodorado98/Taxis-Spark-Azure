@@ -1,0 +1,31 @@
+version: '3'
+
+services:
+  spark-master:
+    image: bitnami/spark:latest
+    command: bin/spark-class org.apache.spark.deploy.master.Master
+    environment:
+      SPARK_MODE: master
+    ports:
+      - "9090:8080"
+      - "7077:7077"
+    volumes:
+      - ./spark:/opt/spark/nacho/scripts
+    networks:
+      - mi_red
+
+  spark-worker:
+    image: bitnami/spark:latest
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    depends_on:
+      - spark-master
+    environment:
+      SPARK_MODE: worker
+      SPARK_WORKER_CORES: 2
+      SPARK_WORKER_MEMORY: 1g
+      SPARK_MASTER_URL: spark://spark-master:7077
+    networks:
+      - mi_red
+      
+networks:
+  mi_red:
