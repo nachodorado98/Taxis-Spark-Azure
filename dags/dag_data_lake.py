@@ -5,13 +5,20 @@ from airflow.utils.task_group import TaskGroup
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.utils.dates import days_ago
 import os
+import time
+
+from config import URL, CONTENEDOR, BRONZE, SILVER
 
 from python.src.datalake.conexion_data_lake import ConexionDataLake
 from python.src.utils import entorno_creado, crearEntornoDataLake, subirArchivosDataLake, descargarArchivo
 
 def obtenerArchivoParquet()->str:
 
-	url="https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2019-06.parquet"
+	fecha="2019-06"
+
+	nombre_archivo=f"yellow_tripdata_{fecha}"
+
+	url_archivo=URL+f"{nombre_archivo}.parquet"
 
 	ruta_data=os.path.join(os.getcwd(), "dags", "data")
 
@@ -21,7 +28,9 @@ def obtenerArchivoParquet()->str:
 
 	try:
 
-		descargarArchivo(url, ruta_data, "yellow_tripdata_2019-06")
+		descargarArchivo(url_archivo, ruta_data, nombre_archivo)
+
+		time.sleep(3)
 
 		return "data_lake_disponible"
 
@@ -45,7 +54,7 @@ def data_lake_disponible()->str:
 
 def entorno_data_lake_creado():
 
-	if not entorno_creado("taxis"):
+	if not entorno_creado(CONTENEDOR):
 
 		return "datalake.crear_entorno_data_lake"
 
@@ -53,7 +62,7 @@ def entorno_data_lake_creado():
 
 def creacion_entorno_data_lake()->None:
 
-	crearEntornoDataLake("taxis", ["Bronze", "Silver"])
+	crearEntornoDataLake(CONTENEDOR, [BRONZE, SILVER])
 
 	print("Entorno Data Lake creado")
 
@@ -71,7 +80,7 @@ def subirParquetDataLake()->None:
 
 	try:
 
-		subirArchivosDataLake("taxis", "Bronze", ruta_data)
+		subirArchivosDataLake(CONTENEDOR, BRONZE, ruta_data)
 
 	except Exception as e:
 

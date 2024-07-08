@@ -1,4 +1,5 @@
-pytest==8.1.1
 azure-identity==1.16.0
 azure-storage-file-datalake==12.14.0
+pytest==8.1.1
+psycopg2-binary==2.9.9
 wget==3.2
