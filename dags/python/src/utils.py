@@ -1,5 +1,8 @@
 from typing import List
 import os
+import wget
+import requests
+import time
 
 from .datalake.conexion_data_lake import ConexionDataLake
 
@@ -48,3 +51,37 @@ def subirArchivosDataLake(nombre_contenedor:str, nombre_carpeta:str, ruta_local_
 		if archivo_local not in archivos_carpeta_contenedor_limpios:
 
 			datalake.subirArchivo(nombre_contenedor, nombre_carpeta, ruta_local_carpeta, archivo_local)
+
+def url_disponible(url:str)->bool:
+
+	try:
+
+		peticion=requests.get(url)
+
+		return False if peticion.status_code!=200 else True
+
+	except Exception:
+
+		return False
+
+def realizarDescarga(url_archivo:str, ruta_archivos:str, nombre_archivo:str, tipo_archivo:str="parquet")->None:
+
+	try:
+		
+		wget.download(url_archivo, os.path.join(ruta_archivos, f"{nombre_archivo}.{tipo_archivo}"))
+
+		time.sleep(2)
+	
+	except Exception as e:
+	
+		raise Exception(f"No se ha podido descargar el archivo de {nombre_archivo}")
+
+def descargarArchivo(url_archivo:str, ruta_archivos:str, nombre_archivo:str)->None:
+
+	if url_disponible(url_archivo):
+
+		realizarDescarga(url_archivo, ruta_archivos, nombre_archivo)
+
+	else: 
+
+		raise Exception(f"No se ha podido descargar el archivo de {nombre_archivo}")

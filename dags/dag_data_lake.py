@@ -7,7 +7,27 @@ from airflow.utils.dates import days_ago
 import os
 
 from python.src.datalake.conexion_data_lake import ConexionDataLake
-from python.src.utils import entorno_creado, crearEntornoDataLake, subirArchivosDataLake
+from python.src.utils import entorno_creado, crearEntornoDataLake, subirArchivosDataLake, descargarArchivo
+
+def obtenerArchivoParquet()->str:
+
+	url="https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2019-06.parquet"
+
+	ruta_data=os.path.join(os.getcwd(), "dags", "data")
+
+	if not os.path.exists(ruta_data):
+
+		os.mkdir(ruta_data)
+
+	try:
+
+		descargarArchivo(url, ruta_data, "yellow_tripdata_2019-06")
+
+		return "data_lake_disponible"
+
+	except Exception:
+
+		return "log_descarga_archivo"
 
 def data_lake_disponible()->str:
 
@@ -47,7 +67,6 @@ def vaciarCarpeta(ruta:str)->None:
 
 def subirParquetDataLake()->None:
 
-
 	ruta_data=os.path.join(os.getcwd(), "dags", "data")
 
 	try:
@@ -81,13 +100,17 @@ with DAG("dag_data_lake",
 
 		tarea_entorno_data_lake_creado >> [tarea_crear_entorno_data_lake, tarea_no_crear_entorno_data_lake]
 
+	tarea_obtener_archivo_parquet=BranchPythonOperator(task_id="obtener_archivo_parquet", python_callable=obtenerArchivoParquet)
 
-	tarea_data_lake_disponible=BranchPythonOperator(task_id="data_lake_disponible", python_callable=data_lake_disponible)
+	tarea_log_descarga_archivo=PythonOperator(task_id="log_descarga_archivo", python_callable=lambda: print("Descarga Archivo Error"))
+
+	tarea_data_lake_disponible=BranchPythonOperator(task_id="data_lake_disponible", python_callable=data_lake_disponible, trigger_rule="none_failed_min_one_success")
 
 	tarea_log_data_lake=PythonOperator(task_id="log_data_lake", python_callable=lambda: print("Data Lake no disponible"))
 
 	tarea_subir_parquet_data_lake=PythonOperator(task_id="subir_parquet_data_lake", python_callable=subirParquetDataLake, trigger_rule="none_failed_min_one_success")
 
+tarea_obtener_archivo_parquet >> [tarea_data_lake_disponible, tarea_log_descarga_archivo]
 
 tarea_data_lake_disponible >> [tareas_datalake, tarea_log_data_lake]
 
