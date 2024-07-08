@@ -10,9 +10,11 @@ def crearSesion()->Optional[SparkSession]:
 
 	try:
 
+		paquetes="org.apache.hadoop:hadoop-azure:3.3.1,com.microsoft.azure:azure-storage:8.6.6"
+
 		return SparkSession.builder\
 							.appName("SparkTaxis")\
-							.config("spark.jars.packages", "org.apache.hadoop:hadoop-azure:3.3.1,com.microsoft.azure:azure-storage:8.6.6")\
+							.config("spark.jars.packages", paquetes)\
 							.config(f"spark.hadoop.fs.azure.account.auth.type.{CUENTA}.dfs.core.windows.net", "OAuth")\
 						    .config(f"spark.hadoop.fs.azure.account.oauth.provider.type.{CUENTA}.dfs.core.windows.net",
 						            "org.apache.hadoop.fs.azurebfs.oauth2.ClientCredsTokenProvider")\
@@ -38,14 +40,14 @@ if __name__ == "__main__":
 
 	spark=crearSesion()
 
-	df=spark.read.parquet("./data/*.parquet")
+	ruta_datalake=f"abfss://{CONTENEDOR}@{CUENTA}.dfs.core.windows.net"
+
+	df=spark.read.parquet(ruta_datalake+"/Bronze/*.parquet")
 
 	df_procesado=preocesarData(df)
 
-	ruta_parquet=f"abfss://{CONTENEDOR}@{CUENTA}.dfs.core.windows.net/data_taxis"
+	df_procesado.write.mode("overwrite").partitionBy("date").parquet(ruta_datalake+"/Silver/taxis_data")
 
-	df_procesado.write.mode("overwrite").partitionBy("date").parquet(ruta_parquet)
-
-	df_data_lake=spark.read.parquet(ruta_parquet)
+	df_data_lake=spark.read.parquet(ruta_datalake+"/Silver/taxis_data")
 
 	df_data_lake.show()
