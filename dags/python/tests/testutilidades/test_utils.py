@@ -3,7 +3,7 @@ import os
 import time
 
 from src.utils import entorno_creado, crearEntornoDataLake, subirArchivosDataLake, url_disponible
-from src.utils import realizarDescarga, descargarArchivo
+from src.utils import realizarDescarga, descargarArchivo, obtenerFecha
 
 def test_entorno_creado_no_creado():
 
@@ -298,3 +298,29 @@ def test_descargar_archivo(url_archivo, nombre_archivo):
 	vaciarCarpeta(ruta_carpeta)
 
 	borrarCarpeta(ruta_carpeta)
+
+@pytest.mark.parametrize(["fecha_inicio"],
+	[("2019-06",),("2019-04",),("1998-02",),("2024-01",),("2024-06",),("2024-08",)]
+)
+def test_obtener_fecha_tabla_vacia(conexion, fecha_inicio):
+
+	assert obtenerFecha(fecha_inicio)==fecha_inicio
+
+@pytest.mark.parametrize(["fechas", "fecha_mes_siguiente"],
+	[
+		(["2019-06","2019-04","1998-02","2024-01","2024-06","2024-08"], "2024-09"),
+		(["2019-06","2019-04","1998-02","2024-01","2020-06","2010-08"], "2024-02"),
+		(["2029-06","2019-04","1998-02","2024-01","2024-06","2024-08"], "2029-07"),
+		(["2019-06","2025-04","1998-02","2024-01","2024-06","2024-08"], "2025-05"),
+		(["2019-06","2019-04","1998-02","2024-01","2024-06","2024-12"], "2025-01")
+	]
+)
+def test_obtener_fecha(conexion, fechas, fecha_mes_siguiente):
+
+	for fecha in fechas:
+
+		conexion.c.execute(f"INSERT INTO taxis VALUES ('{fecha}')")
+
+	conexion.confirmar()
+
+	assert obtenerFecha()==fecha_mes_siguiente

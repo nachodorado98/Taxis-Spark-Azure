@@ -1,5 +1,6 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from typing import Optional
 
 from .confconexion import *
 
@@ -27,3 +28,27 @@ class Conexion:
 	def confirmar(self)->None:
 
 		self.bbdd.commit()
+
+	# Metodo para saber si la tabla esta vacia
+	def tabla_vacia(self)->bool:
+
+		self.c.execute("SELECT * FROM taxis")
+
+		return True if not self.c.fetchall() else False
+
+	# Metodo para obtener la fecha maxima
+	def fecha_maxima(self)->Optional[str]:
+
+		self.c.execute("""SELECT to_char(MAX(to_date(fecha||'-01','YYYY-MM-DD')),'YYYY-MM') AS fecha_maxima
+							FROM taxis""")
+
+		return self.c.fetchone()["fecha_maxima"]
+
+	# Metodo para insertar un registro
+	def insertarFecha(self, fecha:str)->None:
+
+		self.c.execute("""INSERT INTO taxis
+							VALUES(%s)""",
+							(fecha,))
+
+		self.confirmar()

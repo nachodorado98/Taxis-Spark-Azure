@@ -17,4 +17,10 @@ def datalake():
 @pytest.fixture()
 def conexion():
 
-    return Conexion()
+    con=Conexion()
+
+    con.c.execute("DELETE FROM taxis")
+
+    con.confirmar()
+
+    return con

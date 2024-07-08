@@ -3,8 +3,12 @@ import os
 import wget
 import requests
 import time
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 from .datalake.conexion_data_lake import ConexionDataLake
+
+from .database.conexion import Conexion
 
 def entorno_creado(nombre_contenedor:str)->bool:
 
@@ -85,3 +89,23 @@ def descargarArchivo(url_archivo:str, ruta_archivos:str, nombre_archivo:str)->No
 	else: 
 
 		raise Exception(f"No se ha podido descargar el archivo de {nombre_archivo}")
+
+def obtenerFecha(fecha_inicio:str="2024-01")->str:
+
+	con=Conexion()
+
+	if con.tabla_vacia():
+
+		con.cerrarConexion()
+
+		return fecha_inicio
+
+	fecha_maxima=con.fecha_maxima()
+
+	con.cerrarConexion()
+
+	fecha_datetime=datetime.strptime(fecha_maxima, "%Y-%m")
+
+	fecha_mes_siguiente=fecha_datetime+relativedelta(months=1)
+
+	return fecha_mes_siguiente.strftime("%Y-%m")

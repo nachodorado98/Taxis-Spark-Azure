@@ -10,11 +10,23 @@ import time
 from config import URL, CONTENEDOR, BRONZE, SILVER
 
 from python.src.datalake.conexion_data_lake import ConexionDataLake
-from python.src.utils import entorno_creado, crearEntornoDataLake, subirArchivosDataLake, descargarArchivo
+
+from python.src.utils import entorno_creado, crearEntornoDataLake, subirArchivosDataLake
+from python.src.utils import descargarArchivo, obtenerFecha
+
+from python.src.database.conexion import Conexion
+
+def agregarFecha(fecha:str)->None:
+
+	con=Conexion()
+
+	con.insertarFecha(fecha)
+
+	con.cerrarConexion()
 
 def obtenerArchivoParquet()->str:
 
-	fecha="2019-06"
+	fecha=obtenerFecha()
 
 	nombre_archivo=f"yellow_tripdata_{fecha}"
 
@@ -31,6 +43,8 @@ def obtenerArchivoParquet()->str:
 		descargarArchivo(url_archivo, ruta_data, nombre_archivo)
 
 		time.sleep(3)
+
+		agregarFecha(fecha)
 
 		return "data_lake_disponible"
 
@@ -94,7 +108,7 @@ def subirParquetDataLake()->None:
 with DAG("dag_data_lake",
 		start_date=days_ago(1),
 		description="DAG para subir el parquet al datalake",
-		schedule_interval=None,
+		schedule_interval="@monthly",
 		catchup=False) as dag:
 
 
